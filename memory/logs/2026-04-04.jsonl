@@ -1,0 +1,2 @@
+{"timestamp":"2026-04-04T17:19:08.249110239Z","event_type":"user_message","message":"Hello","owner":"user"}
+{"timestamp":"2026-04-04T17:19:08.249481206Z","event_type":"assistant_message","message":"I heard you say: Hello","owner":"assistant"}
