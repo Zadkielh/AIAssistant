@@ -1,13 +1,36 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use crate::types::LogEvent;
 
-pub fn read_log(path: Option<&DateTime<Utc>>) -> std::io::Result<Vec<LogEvent>> {
-    let default = Utc::now();
-    let path = format!("memory/logs/{}.jsonl", path.unwrap_or(&default).format("%Y-%m-%d").to_string());
+fn find_most_recent_log(date: DateTime<Utc>, attempts: i8) -> std::io::Result<File> {    
+    if attempts >= 7 {
+        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Could not find any recent logs."));
+    }
+    
+    let path = format!("memory/logs/{}.jsonl", date.format("%Y-%m-%d").to_string());
+    let attempts: i8 = attempts + 1;
 
-    let file = File::open(path)?;
+    let file = match File::open(path) {
+        Ok(file) => file,
+
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return find_most_recent_log(date - Duration::days(1), attempts);
+        }
+
+        Err(e) => {
+            return Err(e);
+        }
+    };
+
+    Ok(file)
+}
+
+pub fn read_log() -> std::io::Result<Vec<LogEvent>> {
+    let default = Utc::now();
+
+    let file = find_most_recent_log(default, 0)?;
+
     let reader = BufReader::new(file);
 
     let mut events = Vec::new();

@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::memory::logs::{log_message, read_log};
 
 mod memory;
@@ -17,11 +19,25 @@ fn main() -> std::io::Result<()> {
         std::fs::create_dir_all(dir)?;
     }
 
+    let events = read_log()?;
+    if events.is_empty() {
+        println!("No previous conversations found.");
+    } else {
+        println!("Loaded {} events from today.", events.len());
+
+        let recent_events = events.iter().rev().take(5);
+
+        for event in recent_events  {
+            println!("[{}] {}", event.owner, event.message)
+        }
+    }
+
     let mut input = String::new();
 
     while input.trim() != "exit" {
         input.clear();
-        println!("Enter message (type 'exit' to exit):");
+        print!("You: ");
+        std::io::stdout().flush().unwrap();
 
         std::io::stdin()
             .read_line(&mut input)
@@ -38,8 +54,7 @@ fn main() -> std::io::Result<()> {
         log_message(&ai_message, "assistant", "assistant_message")?;
     }
 
-    let events = read_log(None)?;
-    println!("Loaded {} events from today.", events.len());
+    
 
     Ok(())
 }
